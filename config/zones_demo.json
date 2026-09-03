@@ -1,0 +1,12 @@
+{
+  "zones": [
+    {
+      "name": "restricted_area",
+      "polygon": [[200, 50], [700, 50], [700, 400], [200, 400]],
+      "intrusion_enabled": true,
+      "loitering_enabled": true,
+      "loitering_seconds": 2,
+      "color": [0, 0, 255]
+    }
+  ]
+}

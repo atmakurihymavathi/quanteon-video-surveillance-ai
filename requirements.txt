@@ -1,0 +1,21 @@
+# Core dependencies for the video surveillance pipeline.
+# Tested with Python 3.10-3.12 on Linux (CPU) in this repository.
+#
+# Notes:
+# - opencv-contrib-python (not the plain 'opencv-python' package) is used
+#   because it includes cv2.dnn Darknet-model support and optional CUDA
+#   backend support if OpenCV was built with CUDA. If you only need CPU
+#   inference, 'opencv-python>=4.8' also works.
+# - No PyTorch/CUDA toolkit is required -- see README "Model Selection"
+#   for why. This keeps install size small (~200MB vs several GB) and
+#   avoids brittle CUDA-toolchain version matching.
+
+opencv-contrib-python>=4.8,<5
+numpy>=1.24,<3
+scipy>=1.10,<2
+pytest>=7.4,<10
+
+# Optional (only needed for --evaluate against MOT-Challenge ground truth
+# using the standard reference metrics implementation; the project's own
+# evaluation.py works without it):
+# motmetrics>=1.4

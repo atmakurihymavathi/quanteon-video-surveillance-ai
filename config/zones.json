@@ -1,0 +1,20 @@
+{
+  "zones": [
+    {
+      "name": "restricted_area",
+      "polygon": [[100, 100], [500, 100], [500, 400], [100, 400]],
+      "intrusion_enabled": true,
+      "loitering_enabled": true,
+      "loitering_seconds": 10,
+      "color": [0, 0, 255]
+    },
+    {
+      "name": "entrance_lobby",
+      "polygon": [[520, 50], [780, 50], [780, 300], [520, 300]],
+      "intrusion_enabled": true,
+      "loitering_enabled": true,
+      "loitering_seconds": 5,
+      "color": [255, 165, 0]
+    }
+  ]
+}

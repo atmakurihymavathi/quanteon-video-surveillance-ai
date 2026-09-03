@@ -1,0 +1,215 @@
+{
+  "event_count": 14,
+  "events": [
+    {
+      "event_id": "evt-000001",
+      "event_type": "zone_intrusion",
+      "track_id": 1,
+      "zone": "restricted_area",
+      "frame_number": 34,
+      "timestamp": "00:02.83",
+      "confidence": 0.9757,
+      "bbox": [
+        314.9,
+        127.8,
+        400.3,
+        395.9
+      ]
+    },
+    {
+      "event_id": "evt-000002",
+      "event_type": "zone_intrusion",
+      "track_id": 1,
+      "zone": "entrance_lobby",
+      "frame_number": 52,
+      "timestamp": "00:04.33",
+      "confidence": 0.9526,
+      "bbox": [
+        478.7,
+        88.4,
+        568.3,
+        256.3
+      ]
+    },
+    {
+      "event_id": "evt-000003",
+      "event_type": "zone_intrusion",
+      "track_id": 3,
+      "zone": "restricted_area",
+      "frame_number": 198,
+      "timestamp": "00:16.50",
+      "confidence": 0.9867,
+      "bbox": [
+        195.1,
+        149.0,
+        292.1,
+        399.7
+      ]
+    },
+    {
+      "event_id": "evt-000004",
+      "event_type": "zone_intrusion",
+      "track_id": 2,
+      "zone": "restricted_area",
+      "frame_number": 199,
+      "timestamp": "00:16.58",
+      "confidence": 0.8539,
+      "bbox": [
+        323.3,
+        143.6,
+        416.2,
+        366.0
+      ]
+    },
+    {
+      "event_id": "evt-000005",
+      "event_type": "zone_intrusion",
+      "track_id": 4,
+      "zone": "restricted_area",
+      "frame_number": 228,
+      "timestamp": "00:19.00",
+      "confidence": 0.4062,
+      "bbox": [
+        127.0,
+        107.4,
+        175.7,
+        240.0
+      ]
+    },
+    {
+      "event_id": "evt-000006",
+      "event_type": "zone_intrusion",
+      "track_id": 8,
+      "zone": "restricted_area",
+      "frame_number": 359,
+      "timestamp": "00:29.92",
+      "confidence": 0.9876,
+      "bbox": [
+        188.8,
+        111.4,
+        308.0,
+        389.9
+      ]
+    },
+    {
+      "event_id": "evt-000007",
+      "event_type": "zone_intrusion",
+      "track_id": 9,
+      "zone": "restricted_area",
+      "frame_number": 359,
+      "timestamp": "00:29.92",
+      "confidence": 0.6385,
+      "bbox": [
+        361.3,
+        167.9,
+        455.0,
+        392.2
+      ]
+    },
+    {
+      "event_id": "evt-000008",
+      "event_type": "zone_intrusion",
+      "track_id": 9,
+      "zone": "restricted_area",
+      "frame_number": 374,
+      "timestamp": "00:31.17",
+      "confidence": 0.3506,
+      "bbox": [
+        426.4,
+        97.9,
+        512.3,
+        266.2
+      ]
+    },
+    {
+      "event_id": "evt-000009",
+      "event_type": "zone_intrusion",
+      "track_id": 11,
+      "zone": "entrance_lobby",
+      "frame_number": 378,
+      "timestamp": "00:31.50",
+      "confidence": 0.3609,
+      "bbox": [
+        503.3,
+        89.4,
+        556.8,
+        209.1
+      ]
+    },
+    {
+      "event_id": "evt-000010",
+      "event_type": "zone_intrusion",
+      "track_id": 12,
+      "zone": "entrance_lobby",
+      "frame_number": 384,
+      "timestamp": "00:32.00",
+      "confidence": 0.5187,
+      "bbox": [
+        525.6,
+        83.8,
+        586.0,
+        233.9
+      ]
+    },
+    {
+      "event_id": "evt-000011",
+      "event_type": "zone_intrusion",
+      "track_id": 10,
+      "zone": "entrance_lobby",
+      "frame_number": 386,
+      "timestamp": "00:32.17",
+      "confidence": 0.8532,
+      "bbox": [
+        577.1,
+        107.9,
+        705.5,
+        298.9
+      ]
+    },
+    {
+      "event_id": "evt-000012",
+      "event_type": "zone_intrusion",
+      "track_id": 13,
+      "zone": "entrance_lobby",
+      "frame_number": 392,
+      "timestamp": "00:32.67",
+      "confidence": 0.8125,
+      "bbox": [
+        583.6,
+        92.8,
+        645.2,
+        229.1
+      ]
+    },
+    {
+      "event_id": "evt-000013",
+      "event_type": "zone_intrusion",
+      "track_id": 10,
+      "zone": "entrance_lobby",
+      "frame_number": 395,
+      "timestamp": "00:32.92",
+      "confidence": 0.4961,
+      "bbox": [
+        657.0,
+        102.0,
+        767.0,
+        285.1
+      ]
+    },
+    {
+      "event_id": "evt-000014",
+      "event_type": "zone_intrusion",
+      "track_id": 14,
+      "zone": "restricted_area",
+      "frame_number": 534,
+      "timestamp": "00:44.50",
+      "confidence": 0.9874,
+      "bbox": [
+        275.2,
+        95.4,
+        371.4,
+        398.7
+      ]
+    }
+  ]
+}
