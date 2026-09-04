@@ -681,31 +681,26 @@ video-surveillance-ai/
     ├── test_config.py                  # Configuration + utility tests
     └── test_evaluation.py              # MOT evaluation tests
 ```
-
 ## 26. Testing
+
+Run the complete test suite with:
 
 ```bash
 pytest tests/ -v
 ```
 
-60 tests, all passing, covering (per the assignment's explicit list):
+**60 tests, all passing**, covering:
 
 - **Point-in-polygon**: convex, concave, boundary, and outside cases
-- **Zone membership**: bottom-center reference point behavior, multi-zone overlap
-- **Intrusion state transitions**: fire-once-on-entry, no per-frame refire,
-  refire-after-genuine-reentry, disabled-zone no-op, occlusion grace period
-- **Loitering timing**: fires exactly at/after threshold, not before,
-  periodic re-fire, disabled-zone no-op
-- **Event deduplication**: unique event IDs, multi-track/multi-zone independence,
-  lost-track state cleanup
-- **Configuration validation**: missing file, invalid JSON, missing
-  required fields, non-list `zones`, the *actual shipped* `config/zones.json`
-- **Tracker**: ID persistence through occlusion, max-age track expiry,
-  confirmation via min-hits, multiple simultaneous people tracked independently
+- **Zone membership**: bottom-center reference point behavior and multi-zone overlap
+- **Intrusion state transitions**: fire-once-on-entry, no per-frame refire, refire-after-genuine-reentry, disabled-zone no-op, and occlusion grace period
+- **Loitering timing**: fires exactly at/after threshold, not before, periodic re-fire, and disabled-zone no-op
+- **Event deduplication**: unique event IDs, multi-track/multi-zone independence, and lost-track state cleanup
+- **Configuration validation**: missing file, invalid JSON, missing required fields, non-list `zones`, and the actual shipped `config/zones.json`
+- **Tracker**: ID persistence through occlusion, max-age track expiry, confirmation via min-hits, and multiple simultaneous people tracked independently
+- **MOT evaluation utilities**: ground-truth parsing, pedestrian filtering, IoU-based matching, and evaluation result generation
 
-Full-video integration was exercised by *actually running* the CLI
-end-to-end against real footage (not mocked) — see [Reproducibility](#27-reproducibility)
-for the exact commands and results.
+Full-video integration was also exercised by **actually running the CLI end-to-end against real footage** (not mocked). The verified run processed 596 frames, produced 329 detections, and detected 14 intrusion events with 0 loitering events. See [Reproducibility](#27-reproducibility) for the exact commands and results.
 
 ## 27. Reproducibility
 
