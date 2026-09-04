@@ -5,3 +5,11 @@ __pycache__/
 *.egg-info/
 .DS_Store
 .Rhistory
+# Local datasets and downloaded benchmark data
+data/mot17/
+
+# Generated evaluation outputs
+results/evaluation/
+
+# Generated backup files
+*.backup

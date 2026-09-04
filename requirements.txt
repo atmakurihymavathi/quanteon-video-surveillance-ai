@@ -1,21 +1,18 @@
-# Core dependencies for the video surveillance pipeline.
-# Tested with Python 3.10-3.12 on Linux (CPU) in this repository.
-#
-# Notes:
-# - opencv-contrib-python (not the plain 'opencv-python' package) is used
-#   because it includes cv2.dnn Darknet-model support and optional CUDA
-#   backend support if OpenCV was built with CUDA. If you only need CPU
-#   inference, 'opencv-python>=4.8' also works.
-# - No PyTorch/CUDA toolkit is required -- see README "Model Selection"
-#   for why. This keeps install size small (~200MB vs several GB) and
-#   avoids brittle CUDA-toolchain version matching.
+# Core dependencies for the Quanteon video surveillance pipeline.
+# Tested on Python 3.12.7 / Linux CPU.
 
-opencv-contrib-python>=4.8,<5
-numpy>=1.24,<3
-scipy>=1.10,<2
-pytest>=7.4,<10
+# OpenCV 4.x is required for the Darknet DNN API used by YOLOv4-tiny.
+opencv-python==4.10.0.84
 
-# Optional (only needed for --evaluate against MOT-Challenge ground truth
-# using the standard reference metrics implementation; the project's own
-# evaluation.py works without it):
-# motmetrics>=1.4
+# NumPy <2 is required by motmetrics 1.4.0.
+numpy==1.26.4
+
+# Compatible SciPy version for the pinned NumPy release.
+scipy==1.13.1
+
+# Test framework.
+pytest==9.1.1
+
+# Optional evaluation dependency used by scripts/evaluate_mot.py.
+# Provides MOTA, MOTP, IDF1 and related MOT tracking metrics.
+motmetrics==1.4.0

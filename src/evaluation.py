@@ -59,35 +59,106 @@ class PredBox:
     confidence: float = 1.0
 
 
-def load_mot_ground_truth(path: str) -> List[GTBox]:
-    """Load ground truth in MOT-Challenge gt.txt format:
-    frame, id, x, y, w, h, conf, class, visibility
+def load_mot_ground_truth(
+    path: str,
+    mot17_pedestrians_only: bool = False,
+) -> List[GTBox]:
+    """Load ground truth in MOT-Challenge gt.txt format.
 
-    Only frame, id, x, y, w, h are required; extra columns are ignored.
+    Format:
+        frame, id, x, y, w, h, conf, class, visibility
+
+    When ``mot17_pedestrians_only`` is True, keep only annotations that
+    represent valid MOT17 pedestrian targets:
+
+        confidence == 1
+        class == 1
+
+    The default remains generic MOT-format loading, so existing callers
+    continue to work unchanged.
     """
     boxes: List[GTBox] = []
+
     try:
         with open(path, "r", encoding="utf-8") as f:
             reader = csv.reader(f)
+
             for row_num, row in enumerate(reader, start=1):
                 if len(row) < 6:
                     logger.warning(
-                        "Skipping malformed ground-truth row %d in %s (need >= 6 columns)",
-                        row_num, path,
+                        "Skipping malformed ground-truth row %d in %s "
+                        "(need >= 6 columns)",
+                        row_num,
+                        path,
                     )
                     continue
+
                 try:
                     frame = int(float(row[0]))
                     track_id = int(float(row[1]))
                     x, y, w, h = (float(v) for v in row[2:6])
                 except ValueError:
-                    logger.warning("Skipping non-numeric ground-truth row %d in %s", row_num, path)
+                    logger.warning(
+                        "Skipping non-numeric ground-truth row %d in %s",
+                        row_num,
+                        path,
+                    )
                     continue
-                boxes.append(GTBox(frame=frame, track_id=track_id, bbox=(x, y, x + w, y + h)))
-    except FileNotFoundError as exc:
-        raise FileNotFoundError(f"Ground-truth file not found: '{path}'") from exc
-    return boxes
 
+                # MOT17 gt.txt has:
+                # conf = column 7
+                # class = column 8
+                #
+                # For pedestrian evaluation we keep only:
+                #   confidence == 1
+                #   class == 1
+                if mot17_pedestrians_only:
+                    if len(row) < 8:
+                        logger.warning(
+                            "Skipping MOT17 row %d in %s "
+                            "(need >= 8 columns)",
+                            row_num,
+                            path,
+                        )
+                        continue
+
+                    try:
+                        confidence = float(row[6])
+                        object_class = int(float(row[7]))
+                    except ValueError:
+                        logger.warning(
+                            "Skipping invalid MOT17 metadata row %d in %s",
+                            row_num,
+                            path,
+                        )
+                        continue
+
+                    if confidence != 1.0 or object_class != 1:
+                        continue
+
+                boxes.append(
+                    GTBox(
+                        frame=frame,
+                        track_id=track_id,
+                        bbox=(x, y, x + w, y + h),
+                    )
+                )
+
+    except FileNotFoundError as exc:
+        raise FileNotFoundError(
+            f"Ground-truth file not found: '{path}'"
+        ) from exc
+
+    logger.info(
+        "Loaded %d ground-truth boxes from %s%s",
+        len(boxes),
+        path,
+        " (MOT17 pedestrians only)"
+        if mot17_pedestrians_only
+        else "",
+    )
+
+    return boxes
 
 @dataclass
 class EvaluationResult:
