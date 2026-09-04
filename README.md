@@ -455,16 +455,18 @@ Full flag reference: `python run.py --help`.
 
 ## 18. Sample Output
 
-See `results/` for a real, committed run: annotated video, event logs, and
-an extracted frame showing a live loitering alert. Summary:
+The repository includes a committed annotated sample video under
+`results/annotated/`.
 
-```
+A verified CPU run on `data/people-detection.mp4` produced:
+
+```text
 Video FPS: 12.00
-Processing FPS: 5.91
+Processing FPS: ~7.35
 Frames processed: 596
 Frames with detections: 206
 Total detections: 329
-Total processing time: 100.91s
+Total processing time: ~81.08s
 Events detected: 14 (intrusion=14, loitering=0)
 ```
 
@@ -485,17 +487,6 @@ Events detected: 14 (intrusion=14, loitering=0)
       "timestamp": "00:02.83",
       "confidence": 0.9757,
       "bbox": [314.9, 127.8, 400.3, 395.9]
-    },
-    {
-      "event_id": "evt-000002",
-      "event_type": "loitering",
-      "track_id": 1,
-      "zone": "restricted_area",
-      "frame_number": 58,
-      "timestamp": "00:04.83",
-      "confidence": 0.9781,
-      "bbox": [543.4, 89.5, 624.6, 251.0],
-      "duration_seconds": 2.0
     }
   ]
 }
@@ -503,10 +494,9 @@ Events detected: 14 (intrusion=14, loitering=0)
 
 `events.csv` (same data, flattened):
 
-```
+```csv
 event_id,event_type,track_id,zone,frame_number,timestamp,confidence,bbox_x1,bbox_y1,bbox_x2,bbox_y2,duration_seconds
 evt-000001,zone_intrusion,1,restricted_area,34,00:02.83,0.9757,314.9,127.8,400.3,395.9,
-evt-000002,loitering,1,restricted_area,58,00:04.83,0.9781,543.4,89.5,624.6,251.0,2.0
 ```
 
 ## 20. Performance
@@ -515,17 +505,15 @@ Measured in this sandbox (containerized Linux, CPU-only, shared/limited
 cores — expect notably better throughput on a dedicated reviewer machine):
 
 - **Video**: 768×432 @ 12 FPS, 596 frames (~50s)
-- **Processing FPS**: ~5.91 FPS on the verified CPU run (i.e. sub-real-time on this constrained
-  CPU at 416×416 input; real-time throughput requires either a faster
-  CPU, a smaller `--input-size`, or GPU inference)
-- **Total wall time**: ~62s for the full clip
+- **Processing FPS**: ~7.35 FPS on the verified CPU run with 416×416 input
+- **Total wall time**: ~81.08s for the full clip
+- **Real-time status**: sub-real-time on the tested CPU environment
 - **Memory**: flat / does not grow with video length — only the current
   frame, per-track state (a handful of floats each), and per-`(track,
   zone)` state machine entries are held in memory at any time; the video
   is never buffered in full (`cv2.VideoCapture.read()` is called in a
   loop, one frame at a time, and each annotated frame is written to disk
   immediately rather than accumulated).
-
 Levers to trade accuracy for speed: lower `--input-size` (e.g. 320),
 raise `--confidence` (fewer boxes to NMS), or `--no-save-video` (skip
 annotation/encoding overhead when only events are needed).
@@ -595,11 +583,14 @@ Stated plainly, as the assignment asks for:
    pre-processing stage; out of scope here.
 4. **Zones are static per run.** Zones do not currently move/rotate with
    a PTZ camera; each run assumes a fixed camera framing.
-5. **Evaluation module intentionally does not compute MOTA/MOTP.** See
-   `src/evaluation.py`'s docstring: implementing an *incorrect* version
-   of a standard metric was judged worse than providing a correctly-scoped
-   precision/recall/F1/ID-switch evaluation plus a documented bridge to
-   the reference `motmetrics` package for anyone who needs true MOTA/MOTP.
+5. **MOT evaluation is a lightweight benchmark integration rather than a
+   full official MOTChallenge reproduction.** The project includes
+   `scripts/evaluate_mot.py`, which evaluates predictions against MOT-format
+   ground truth and uses `motmetrics` to report MOTA, MOTP, IDF1 and related
+   metrics. The current integration does not fully reproduce every
+   MOTChallenge-specific ignore-region, distractor and evaluation-policy
+   detail, so the reported numbers should be treated as MOT-style evaluation
+   results rather than official leaderboard scores.
 6. **Single video/camera per run.** Multi-camera fusion (matching the
    same person across camera views) is not implemented — each run
    processes one video stream independently.
@@ -619,66 +610,63 @@ Stated plainly, as the assignment asks for:
 - Multi-camera track fusion using homography-based ground-plane mapping.
 - A small web dashboard (the stretch goal) streaming annotated frames +
   live event feed over websockets.
-- Wire `src/evaluation.py`'s `to_motmetrics_accumulator()` into a small
-  CLI subcommand once a MOT17-format ground-truth clip is available for
-  quantitative tracking-accuracy reporting.
+- Expand the MOT evaluation integration to reproduce the official
+  MOTChallenge evaluation protocol more completely, including ignore regions,
+  distractor handling and additional benchmark-specific matching rules.
 - Batch/parallel frame preprocessing (currently strictly sequential) if
   throughput becomes the bottleneck on longer videos.
 
 ## 25. Project Structure
 
-```
+```text
 video-surveillance-ai/
 ├── README.md
 ├── requirements.txt
 ├── .gitignore
 ├── run.py                       # CLI entry point
 ├── config/
-│   ├── zones.json               # example zone config (2 zones)
-│   └── zones_demo.json          # zone configuration used for the bundled sample
+│   ├── zones.json               # example zone configuration
+│   └── zones_demo.json          # zone configuration for bundled sample
 ├── models/
-│   ├── README.md                # weight provenance + re-download instructions
+│   ├── README.md                # model provenance + download instructions
 │   ├── yolov4-tiny.cfg
-│   ├── yolov4-tiny.weights      # YOLOv4-tiny model weights
+│   ├── yolov4-tiny.weights     # YOLOv4-tiny model weights
 │   └── coco.names
 ├── src/
 │   ├── __init__.py
-│   ├── detector.py               # PersonDetector (cv2.dnn / YOLOv4-tiny)
-│   ├── tracker.py                # PersonTracker (IoU + Hungarian, SORT-style)
-│   ├── zone_manager.py           # Zone, ZoneManager (polygon membership)
-│   ├── events.py                 # EventManager (intrusion/loitering state machine)
-│   ├── pipeline.py               # SurveillancePipeline (orchestration + annotation)
-│   ├── logger.py                 # EventLogWriter (JSON/CSV persistence)
-│   ├── utils.py                  # bbox math, timestamps, config loading
-│   └── evaluation.py             # MOT-format evaluation scaffold
+│   ├── detector.py              # PersonDetector (OpenCV DNN / YOLOv4-tiny)
+│   ├── tracker.py               # PersonTracker (IoU + Hungarian, SORT-style)
+│   ├── zone_manager.py          # Zone and ZoneManager
+│   ├── events.py                # EventManager (intrusion/loitering)
+│   ├── pipeline.py              # SurveillancePipeline
+│   ├── logger.py                # EventLogWriter (JSON/CSV persistence)
+│   ├── utils.py                 # bbox math, timestamps, config loading
+│   └── evaluation.py            # MOT-format evaluation utilities
 ├── scripts/
-│   └── generate_synthetic_video.py  # deterministic test-fixture video generator
+│   ├── generate_synthetic_video.py  # deterministic test fixture generator
+│   └── evaluate_mot.py              # MOT-style evaluation runner
 ├── data/
-│   ├── README.md                 # dataset sources + how to get footage
-│   └── people-detection.mp4      # small CC-BY sample clip used for testing
-├── results/  # generated output directory
-│   ├── annotated/                 # generated annotated videos (gitignored)
-│   └── events/                    # generated event logs (gitignored)
+│   ├── README.md                 # dataset sources + download instructions
+│   └── people-detection.mp4      # bundled sample clip
 ├── results/
-│   ├── README.md
-│   ├── people-detection_annotated.mp4  # committed sample output
-
-│   ├── events.json
-│   └── events.csv
+│   ├── annotated/
+│   │   └── people-detection_annotated.mp4
+│   └── events/
+│       ├── events.json
+│       └── events.csv
 └── tests/
-    ├── test_zones.py             # point-in-polygon, membership, validation
-    ├── test_events.py            # intrusion/loitering state machine, dedup
-    ├── test_tracker.py           # association, occlusion, multi-person
-    └── test_config.py            # config loading, IoU math, formatting
-```
-
+    ├── test_zones.py             # polygon membership + validation
+    ├── test_events.py            # intrusion/loitering + deduplication
+    ├── test_tracker.py           # association + occlusion + multi-person
+    ├── test_config.py             # configuration + utility tests
+    └── test_evaluation.py        # MOT evaluation tests
 ## 26. Testing
 
 ```bash
 pytest tests/ -v
 ```
 
-53 tests, all passing, covering (per the assignment's explicit list):
+60 tests, all passing, covering (per the assignment's explicit list):
 
 - **Point-in-polygon**: convex, concave, boundary, and outside cases
 - **Zone membership**: bottom-center reference point behavior, multi-zone overlap
@@ -709,7 +697,7 @@ pip install -r requirements.txt
 
 # 2. Unit tests
 pytest tests/ -v
-# -> 53 passed
+# -> 60 passed
 
 # 3. End-to-end CLI run on real footage
 python run.py --video data/people-detection.mp4 \
