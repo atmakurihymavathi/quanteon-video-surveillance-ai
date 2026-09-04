@@ -470,6 +470,17 @@ Total processing time: ~81.08s
 Events detected: 14 (intrusion=14, loitering=0)
 ```
 
+### Annotated Frame
+
+The sample output below shows the pipeline detecting and tracking two people,
+rendering the configured `restricted_area` and `entrance_lobby` zones, and
+raising a zone-intrusion event in the same frame.
+
+![Annotated intrusion detection sample](results/annotated/sample_intrusion_frame.jpg)
+
+*Sample frame: frame 210 at 00:17.50, with persistent track IDs, confidence
+scores, polygon zones, and a `restricted_area` intrusion alert.*
+
 ## 19. Event Log Examples
 
 `events.json`:
