@@ -602,9 +602,7 @@ Stated plainly, as the assignment asks for:
    MOTChallenge-specific ignore-region, distractor and evaluation-policy
    detail, so the reported numbers should be treated as MOT-style evaluation
    results rather than official leaderboard scores.
-7. **Single video/camera per run.** Multi-camera fusion (matching the
-   same person across camera views) is not implemented — each run
-   processes one video stream independently.
+7. **Single video/camera per run.** Single camera per video stream. Multiple video files can be processed sequentially in one CLI invocation, but multi-camera fusion/re-identification across different camera views is not implemented.
 8. **CPU-only was the only backend actually exercised.** CUDA fallback
    *logic* is implemented and tested (the "not available" path), but no
    GPU was available in the build/test sandbox to verify actual CUDA
