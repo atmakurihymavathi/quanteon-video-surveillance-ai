@@ -64,7 +64,7 @@ a research prototype chasing benchmark accuracy.
 - Automatic CPU/CUDA device selection with graceful fallback
 - Streaming, frame-by-frame processing (flat memory usage on long videos)
 - FPS benchmarking (video FPS vs. processing FPS)
-- 53 unit tests covering geometry, state machines, and config validation
+- 60 unit tests covering geometry, state machines, tracking, evaluation, and config validation
 - Honest evaluation scaffold for MOT-format ground truth (precision/recall/F1/ID-switches)
 
 ## 3. Architecture Overview
@@ -132,12 +132,12 @@ per frame, until the video ends:
 | Full YOLOv4 (non-tiny) | ❌ (but supported) | Higher accuracy, ~3-4x slower than tiny on CPU. `--model` lets you swap it in if accuracy matters more than speed for your footage. |
 | HOG+SVM (classic) | ❌ | Zero extra dependencies (built into OpenCV) but meaningfully worse accuracy on modern footage (lighting, pose, partial occlusion) than any CNN detector; considered as a bottom-line fallback, rejected because it would misrepresent this as a "modern lightweight detector" per the assignment. |
 
-**Speed vs. accuracy**: YOLOv4-tiny trades the ~10-15% mAP that full
-YOLOv4/YOLOv8 would give you (on COCO `person`) for roughly a 5-8x
-CPU speedup and a fraction of the memory footprint. For a surveillance
-system that needs to keep up with real video streams on commodity
-hardware — and where the assignment explicitly says perfect accuracy is
-not the bar — this is the right side of the trade-off.
+**Speed vs. accuracy**: YOLOv4-tiny trades some detection accuracy for
+substantially lower computational cost and memory usage compared with
+larger YOLO variants. For a surveillance system that needs to run on
+commodity CPU hardware — and where the assignment explicitly says
+perfect accuracy is not the bar — this is a reasonable engineering
+trade-off.
 
 **Pre-trained vs. fine-tuned**: The assignment scope (8-10 hours, no
 training pipeline requirement) and "must work with a pre-trained model"
@@ -353,8 +353,8 @@ disables zone/event logic (detection + tracking still run).
 ### Linux (CPU) — primary supported path
 
 ```bash
-git clone <your-repo-url> video-surveillance-ai
-cd video-surveillance-ai
+git clone https://github.com/atmakurihymavathi/quanteon-video-surveillance-ai.git
+cd quanteon-video-surveillance-ai
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
@@ -376,23 +376,21 @@ only cross-platform paths (`os.path.join`, no hardcoded `/`).
 ### NVIDIA GPU (optional)
 
 `cv2.dnn`'s CUDA backend requires an OpenCV build compiled with CUDA
-support, which the default `opencv-contrib-python` PyPI wheel is **not**.
-`--device auto`/`cuda` will detect this and cleanly fall back to CPU with
-a logged warning rather than crash — GPU support is *not* claimed to work
+support, which the standard PyPI OpenCV wheels are **not**. `--device
+auto`/`cuda` will detect this and cleanly fall back to CPU with a logged
+warning rather than crash — GPU support is not claimed to work
 out-of-the-box from `pip install`, only that the code path exists and
-degrades gracefully. To actually get CUDA acceleration, build OpenCV
-from source with `-D WITH_CUDA=ON`, or use an environment (e.g. an
-NVIDIA-provided container) that ships one.
-
+degrades gracefully.
 ## 16. Requirements
 
 See `requirements.txt`:
 
 ```
-opencv-contrib-python>=4.8,<5
-numpy>=1.24,<3
-scipy>=1.10,<2
-pytest>=7.4,<10
+opencv-python==4.10.0.84
+numpy==1.26.4
+scipy==1.13.1
+pytest==9.1.1
+motmetrics==1.4.0
 ```
 
 Deliberately **no PyTorch/TensorFlow** — see [Model Selection](#6-model-selection)
@@ -586,15 +584,17 @@ Stated plainly, as the assignment asks for:
 2. **Re-identification is motion-based, not appearance-based** — see
    [Re-Identification Approach](#9-re-identification-approach) in full.
    ID switches will happen in crossings and long occlusions.
-2b. In practice, on the sample video, tracks were observed to churn IDs
-   relatively often in a crowded doorway — expected given (1) and (2).
-3. **No dedicated lighting/shake compensation.** A production system for
+3. **Observed ID churn in crowded scenes.** On the sample video, tracks
+   were observed to churn IDs relatively often in a crowded doorway.
+   This is expected given the motion-based association approach and is
+   documented as a known limitation rather than hidden.
+4. **No dedicated lighting/shake compensation.** A production system for
    genuinely challenging footage (night-vision switches, heavy handheld
    shake) would add frame-level normalization or stabilization as a
    pre-processing stage; out of scope here.
-4. **Zones are static per run.** Zones do not currently move/rotate with
+5. **Zones are static per run.** Zones do not currently move/rotate with
    a PTZ camera; each run assumes a fixed camera framing.
-5. **MOT evaluation is a lightweight benchmark integration rather than a
+6. **MOT evaluation is a lightweight benchmark integration rather than a
    full official MOTChallenge reproduction.** The project includes
    `scripts/evaluate_mot.py`, which evaluates predictions against MOT-format
    ground truth and uses `motmetrics` to report MOTA, MOTP, IDF1 and related
@@ -602,10 +602,10 @@ Stated plainly, as the assignment asks for:
    MOTChallenge-specific ignore-region, distractor and evaluation-policy
    detail, so the reported numbers should be treated as MOT-style evaluation
    results rather than official leaderboard scores.
-6. **Single video/camera per run.** Multi-camera fusion (matching the
+7. **Single video/camera per run.** Multi-camera fusion (matching the
    same person across camera views) is not implemented — each run
    processes one video stream independently.
-7. **CPU-only was the only backend actually exercised.** CUDA fallback
+8. **CPU-only was the only backend actually exercised.** CUDA fallback
    *logic* is implemented and tested (the "not available" path), but no
    GPU was available in the build/test sandbox to verify actual CUDA
    inference correctness or measure real speedup.
@@ -634,43 +634,52 @@ video-surveillance-ai/
 ├── README.md
 ├── requirements.txt
 ├── .gitignore
-├── run.py                       # CLI entry point
+├── run.py                              # CLI entry point
+│
 ├── config/
-│   ├── zones.json               # example zone configuration
-│   └── zones_demo.json          # zone configuration for bundled sample
+│   ├── zones.json                      # Example zone configuration
+│   └── zones_demo.json                 # Zone configuration for bundled sample
+│
 ├── models/
-│   ├── README.md                # model provenance + download instructions
-│   ├── yolov4-tiny.cfg
-│   ├── yolov4-tiny.weights     # YOLOv4-tiny model weights
-│   └── coco.names
+│   ├── README.md                       # Model provenance + download instructions
+│   ├── yolov4-tiny.cfg                 # YOLOv4-tiny network configuration
+│   ├── yolov4-tiny.weights             # YOLOv4-tiny model weights
+│   └── coco.names                      # COCO class labels
+│
 ├── src/
 │   ├── __init__.py
-│   ├── detector.py              # PersonDetector (OpenCV DNN / YOLOv4-tiny)
-│   ├── tracker.py               # PersonTracker (IoU + Hungarian, SORT-style)
-│   ├── zone_manager.py          # Zone and ZoneManager
-│   ├── events.py                # EventManager (intrusion/loitering)
-│   ├── pipeline.py              # SurveillancePipeline
-│   ├── logger.py                # EventLogWriter (JSON/CSV persistence)
-│   ├── utils.py                 # bbox math, timestamps, config loading
-│   └── evaluation.py            # MOT-format evaluation utilities
+│   ├── detector.py                     # PersonDetector (OpenCV DNN / YOLOv4-tiny)
+│   ├── tracker.py                      # PersonTracker (IoU + Hungarian, SORT-style)
+│   ├── zone_manager.py                 # Zone and ZoneManager
+│   ├── events.py                       # EventManager (intrusion/loitering)
+│   ├── pipeline.py                     # SurveillancePipeline
+│   ├── logger.py                       # EventLogWriter (JSON/CSV persistence)
+│   ├── utils.py                        # Bounding-box math, timestamps, config loading
+│   └── evaluation.py                   # MOT-format evaluation utilities
+│
 ├── scripts/
-│   ├── generate_synthetic_video.py  # deterministic test fixture generator
-│   └── evaluate_mot.py              # MOT-style evaluation runner
+│   ├── generate_synthetic_video.py     # Deterministic test fixture generator
+│   └── evaluate_mot.py                # MOT-style evaluation runner
+│
 ├── data/
-│   ├── README.md                 # dataset sources + download instructions
-│   └── people-detection.mp4      # bundled sample clip
+│   ├── README.md                       # Dataset sources + download instructions
+│   └── people-detection.mp4            # Bundled sample clip
+│
 ├── results/
 │   ├── annotated/
-│   │   └── people-detection_annotated.mp4
+│   │   ├── people-detection_annotated.mp4
+│   │   └── sample_intrusion_frame.jpg # Annotated sample frame used in README
+│   │
 │   └── events/
-│       ├── events.json
-│       └── events.csv
+│       ├── events.json                 # Structured event log
+│       └── events.csv                  # Flattened event log
+│
 └── tests/
-    ├── test_zones.py             # polygon membership + validation
-    ├── test_events.py            # intrusion/loitering + deduplication
-    ├── test_tracker.py           # association + occlusion + multi-person
-    ├── test_config.py             # configuration + utility tests
-    └── test_evaluation.py        # MOT evaluation tests
+    ├── test_zones.py                   # Polygon membership + validation
+    ├── test_events.py                  # Intrusion/loitering + deduplication
+    ├── test_tracker.py                 # Association + occlusion + multi-person
+    ├── test_config.py                  # Configuration + utility tests
+    └── test_evaluation.py              # MOT evaluation tests
 ## 26. Testing
 
 ```bash
@@ -723,11 +732,9 @@ python run.py --video /tmp/not_a_video.mp4 ...          # -> exit 1
 python run.py --video ... --zones empty_zones.json ...  # -> runs fine, 0 zone events
 python run.py --video ... --device cuda ...              # -> logs fallback, runs on CPU
 ```
-
-`requirements.txt` pins version *ranges* (not exact pins) chosen to be
-realistically installable together as of this writing, rather than exact
-pins that could conflict with a reviewer's existing environment or
-become unavailable over time.
+`requirements.txt` uses exact package versions for the verified environment
+to improve reproducibility and avoid known compatibility issues between
+OpenCV, NumPy, SciPy, pytest, and motmetrics.
 
 ## 28. Dataset / Video Sources
 
